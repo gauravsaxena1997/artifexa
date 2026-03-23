@@ -2,6 +2,9 @@
 
 import { useState, useCallback, useRef } from "react";
 import type { CreativeAgentEvent, CreativePromptBundle, CreativeMedium } from "@/types/creative";
+import { formatUserFacingError } from "@/lib/ui-errors";
+
+const PIPELINE_TIMEOUT_MS = 120000;
 
 interface CreativeStreamState {
   events: CreativeAgentEvent[];
@@ -39,13 +42,34 @@ export function useCreativeStream() {
     });
   }, []);
 
-  const run = useCallback(async (input: string, medium: CreativeMedium, source: "text" | "ocr" = "text") => {
+  const run = useCallback(async (
+    input: string,
+    medium: CreativeMedium,
+    source: "text" | "ocr" = "text",
+    clarificationSummary: string[] = []
+  ) => {
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
+    const timeoutHandle = window.setTimeout(() => controller.abort("timeout"), PIPELINE_TIMEOUT_MS);
+
+    const now = Date.now();
+    const clarificationEvent: CreativeAgentEvent | null = clarificationSummary.length > 0
+      ? {
+          id: `clarify-${now}`,
+          timestamp: now,
+          state: "ANALYZING",
+          agent: "System",
+          persona: "Intent Clarifier",
+          type: "completed",
+          message: `Clarification complete — ${clarificationSummary.length} answer${clarificationSummary.length > 1 ? "s" : ""} captured`,
+          detail: clarificationSummary.slice(0, 3).join(" | "),
+        }
+      : null;
+
     setState({
-      events: [],
+      events: clarificationEvent ? [clarificationEvent] : [],
       finalOutput: null,
       isRunning: true,
       error: null,
@@ -99,9 +123,23 @@ export function useCreativeStream() {
                   runMeta: data as CreativeStreamState["runMeta"],
                 }));
               } else if (eventType === "error") {
+                const rawMessage = (data as { message: string }).message || "Unknown error";
+                const userMessage = formatUserFacingError(rawMessage);
                 setState((prev) => ({
                   ...prev,
-                  error: (data as { message: string }).message,
+                  error: userMessage,
+                  events: [
+                    ...prev.events,
+                    {
+                      id: `stream-error-${Date.now()}`,
+                      timestamp: Date.now(),
+                      state: prev.events[prev.events.length - 1]?.state ?? "ANALYZING",
+                      agent: "System",
+                      persona: "Pipeline Guard",
+                      type: "error",
+                      message: userMessage,
+                    } as CreativeAgentEvent,
+                  ],
                 }));
               }
             } catch {
@@ -113,12 +151,47 @@ export function useCreativeStream() {
       }
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
+        const userMessage = formatUserFacingError((err as Error).message || "Connection failed");
         setState((prev) => ({
           ...prev,
-          error: (err as Error).message || "Connection failed",
+          error: userMessage,
+          events: [
+            ...prev.events,
+            {
+              id: `client-error-${Date.now()}`,
+              timestamp: Date.now(),
+              state: prev.events[prev.events.length - 1]?.state ?? "ANALYZING",
+              agent: "System",
+              persona: "Pipeline Guard",
+              type: "error",
+              message: userMessage,
+            } as CreativeAgentEvent,
+          ],
         }));
+      } else {
+        const abortedForTimeout = controller.signal.reason === "timeout";
+        if (abortedForTimeout) {
+          const timeoutMessage = formatUserFacingError("timeout");
+          setState((prev) => ({
+            ...prev,
+            error: timeoutMessage,
+            events: [
+              ...prev.events,
+              {
+                id: `timeout-error-${Date.now()}`,
+                timestamp: Date.now(),
+                state: prev.events[prev.events.length - 1]?.state ?? "ANALYZING",
+                agent: "System",
+                persona: "Pipeline Guard",
+                type: "error",
+                message: timeoutMessage,
+              } as CreativeAgentEvent,
+            ],
+          }));
+        }
       }
     } finally {
+      window.clearTimeout(timeoutHandle);
       setState((prev) => ({ ...prev, isRunning: false }));
       abortRef.current = null;
     }

@@ -7,7 +7,6 @@ import {
   Check,
   FileJson,
   FileText,
-  AlertTriangle,
   Maximize2,
   Minimize2,
   Info,
@@ -314,20 +313,14 @@ export function CreativeOutputPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {error ? (
-          <div className="flex items-center justify-center h-full p-6">
-            <div className="text-center space-y-3">
-              <AlertTriangle className="w-10 h-10 text-destructive mx-auto" />
-              <p className="text-base text-destructive font-medium">Pipeline Error</p>
-              <p className="text-sm text-muted-foreground max-w-md">{error}</p>
-            </div>
-          </div>
-        ) : !finalOutput ? (
+        {!finalOutput ? (
           <div className="flex items-center justify-center h-full p-6">
             <div className="text-center space-y-3">
               <Download className="w-10 h-10 text-muted-foreground/30 mx-auto" />
               <p className="text-base text-muted-foreground">
-                Your generated prompt will appear here
+                {error
+                  ? "Run stopped. Fix the issue and retry when ready."
+                  : "Your generated prompt will appear here"}
               </p>
               <p className="text-xs text-muted-foreground/60">
                 Both JSON structured and natural language formats

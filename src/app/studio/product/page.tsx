@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, Package, Info, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Package, Info, X, Activity } from "lucide-react";
 import Link from "next/link";
 import { InputPanel } from "@/components/studio/InputPanel";
 import { ProcessView } from "@/components/studio/ProcessView";
 import { OutputPanel } from "@/components/studio/OutputPanel";
 import { useStudioStream } from "@/hooks/useStudioStream";
 import { PRODUCT_STUDIO_AGENTS } from "@/types/creative";
-
-type MobileTab = "input" | "process" | "output";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Snackbar } from "@/components/ui/snackbar";
 
 function ProductAgentInfoDialog({ onClose }: { onClose: () => void }) {
   return (
@@ -56,14 +56,35 @@ function ProductAgentInfoDialog({ onClose }: { onClose: () => void }) {
 
 export default function ProductStudioPage() {
   const { events, finalOutput, isRunning, error, runMeta, run } = useStudioStream();
-  const [mobileTab, setMobileTab] = useState<MobileTab>("input");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showAgentInfo, setShowAgentInfo] = useState(false);
+  const [showProcessModal, setShowProcessModal] = useState(false);
+  const [showErrorSnackbar, setShowErrorSnackbar] = useState(false);
 
-  const handleRun = (input: string, source: "text" | "ocr") => {
-    setMobileTab("process");
-    run(input, source);
+  const handleRun = (
+    input: string,
+    source: "text" | "ocr",
+    clarificationSummary?: string[]
+  ) => {
+    setShowProcessModal(true);
+    run(input, source, clarificationSummary);
   };
+
+  useEffect(() => {
+    if (isRunning) {
+      setShowProcessModal(true);
+      return;
+    }
+    if (!isRunning && (finalOutput || error)) {
+      setShowProcessModal(false);
+    }
+  }, [error, finalOutput, isRunning]);
+
+  useEffect(() => {
+    if (error) {
+      setShowErrorSnackbar(true);
+    }
+  }, [error]);
 
   const qualityScore = runMeta?.qualityScore ?? null;
 
@@ -119,34 +140,7 @@ export default function ProductStudioPage() {
         </header>
       )}
 
-      {/* Mobile Tab Bar */}
-      {!isFullscreen && (
-        <div className="lg:hidden shrink-0 border-b border-border bg-card/50">
-          <div className="flex">
-            {(["input", "process", "output"] as MobileTab[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setMobileTab(tab)}
-                className={`flex-1 py-2.5 text-xs font-medium text-center capitalize transition-colors ${
-                  mobileTab === tab
-                    ? "text-primary border-b-2 border-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {tab}
-                {tab === "output" && finalOutput && (
-                  <span className="ml-1.5 w-1.5 h-1.5 rounded-full bg-[var(--success)] inline-block" />
-                )}
-                {tab === "process" && isRunning && (
-                  <span className="ml-1.5 w-1.5 h-1.5 rounded-full bg-primary animate-pulse inline-block" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Desktop: 3-panel layout / Mobile: tab content */}
+      {/* Split Layout: Input + Output (50 / 50) */}
       <div className="flex-1 overflow-hidden">
         {isFullscreen ? (
           <div className="h-full overflow-y-auto">
@@ -160,51 +154,58 @@ export default function ProductStudioPage() {
             />
           </div>
         ) : (
-          <>
-            {/* Desktop */}
-            <div className="hidden lg:grid lg:grid-cols-[280px_1fr_1fr] h-full divide-x divide-border">
-              <div className="overflow-y-auto">
-                <InputPanel onRun={handleRun} isRunning={isRunning} />
-              </div>
-              <div className="overflow-y-auto">
-                <ProcessView events={events} isRunning={isRunning} />
-              </div>
-              <div className="overflow-y-auto">
-                <OutputPanel
-                  finalOutput={finalOutput}
-                  qualityScore={qualityScore}
-                  error={error}
-                  runMeta={runMeta}
-                  isFullscreen={isFullscreen}
-                  onToggleFullscreen={() => setIsFullscreen(true)}
-                />
-              </div>
+          <div className="grid lg:grid-cols-2 h-full divide-x divide-border">
+            <div className="overflow-y-auto min-h-0">
+              <InputPanel onRun={handleRun} isRunning={isRunning} />
             </div>
-
-            {/* Mobile */}
-            <div className="lg:hidden h-full">
-              <div className={mobileTab === "input" ? "h-full" : "hidden"}>
-                <InputPanel onRun={handleRun} isRunning={isRunning} />
-              </div>
-              <div className={mobileTab === "process" ? "h-full overflow-y-auto" : "hidden"}>
-                <ProcessView events={events} isRunning={isRunning} />
-              </div>
-              <div className={mobileTab === "output" ? "h-full overflow-y-auto" : "hidden"}>
-                <OutputPanel
-                  finalOutput={finalOutput}
-                  qualityScore={qualityScore}
-                  error={error}
-                  runMeta={runMeta}
-                  isFullscreen={isFullscreen}
-                  onToggleFullscreen={() => setIsFullscreen(true)}
-                />
-              </div>
+            <div className="overflow-y-auto min-h-0">
+              <OutputPanel
+                finalOutput={finalOutput}
+                qualityScore={qualityScore}
+                error={error}
+                runMeta={runMeta}
+                isFullscreen={isFullscreen}
+                onToggleFullscreen={() => setIsFullscreen(true)}
+              />
             </div>
-          </>
+          </div>
         )}
       </div>
 
+      {!isFullscreen && (
+        <button
+          onClick={() => setShowProcessModal(true)}
+          className="fixed bottom-5 right-5 z-40 rounded-full border border-primary/30 bg-background/95 shadow-lg px-4 py-2.5 flex items-center gap-2 hover:border-primary transition-colors"
+        >
+          <Activity className={`w-4 h-4 ${isRunning ? "text-primary animate-pulse" : "text-primary"}`} />
+          <span className="text-xs font-medium">Process</span>
+          {events.length > 0 && (
+            <span className="text-[10px] rounded-full bg-primary/10 text-primary px-1.5 py-0.5">
+              {events.length}
+            </span>
+          )}
+        </button>
+      )}
+
+      <Dialog open={showProcessModal} onOpenChange={setShowProcessModal}>
+        <DialogContent className="max-w-4xl w-[95vw] h-[78vh] p-0 sm:max-w-4xl" showCloseButton>
+          <DialogHeader className="px-5 pt-4 pb-0">
+            <DialogTitle className="text-sm">Pipeline Process</DialogTitle>
+          </DialogHeader>
+          <div className="h-full overflow-y-auto pb-4">
+            <ProcessView events={events} isRunning={isRunning} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {showAgentInfo && <ProductAgentInfoDialog onClose={() => setShowAgentInfo(false)} />}
+
+      <Snackbar
+        open={showErrorSnackbar && Boolean(error)}
+        message={error ?? ""}
+        tone="error"
+        onClose={() => setShowErrorSnackbar(false)}
+      />
     </div>
   );
 }

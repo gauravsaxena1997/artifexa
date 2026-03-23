@@ -51,17 +51,25 @@ export async function callLLM(
     config.clientSecret
   );
 
-  const response = await fetch(`${config.baseUrl}${GATEWAY_INFER_PATH}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-gw-client-id": config.clientId,
-      "x-gw-timestamp": timestamp,
-      "x-gw-signature": signature,
-    },
-    body: rawBody,
-    signal: AbortSignal.timeout(config.timeoutMs),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${config.baseUrl}${GATEWAY_INFER_PATH}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-gw-client-id": config.clientId,
+        "x-gw-timestamp": timestamp,
+        "x-gw-signature": signature,
+      },
+      body: rawBody,
+      signal: AbortSignal.timeout(config.timeoutMs),
+    });
+  } catch (err) {
+    const root = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Unable to reach AI gateway at ${config.baseUrl}${GATEWAY_INFER_PATH}. ${root}`
+    );
+  }
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "Unknown error");

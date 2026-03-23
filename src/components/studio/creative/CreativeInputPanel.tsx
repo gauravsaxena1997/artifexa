@@ -4,22 +4,98 @@ import { useState } from "react";
 import { Loader2, Image, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { CreativeSampleDialog } from "./CreativeSampleDialog";
+import { ClarificationDialog } from "@/components/studio/ClarificationDialog";
 import type { CreativeMedium } from "@/types/creative";
+import type { ClarificationAnswer, ClarificationPlan } from "@/types/clarification";
 
 interface CreativeInputPanelProps {
-  onRun: (input: string, medium: CreativeMedium, source: "text" | "ocr") => void;
+  onRun: (
+    input: string,
+    medium: CreativeMedium,
+    source: "text" | "ocr",
+    clarificationSummary?: string[]
+  ) => void;
   isRunning: boolean;
 }
 
 export function CreativeInputPanel({ onRun, isRunning }: CreativeInputPanelProps) {
   const [input, setInput] = useState("");
   const [medium, setMedium] = useState<CreativeMedium>("image");
+  const [askCrossQuestions, setAskCrossQuestions] = useState(true);
+  const [clarifyOpen, setClarifyOpen] = useState(false);
+  const [clarifyLoading, setClarifyLoading] = useState(false);
+  const [clarifyPlan, setClarifyPlan] = useState<ClarificationPlan | null>(null);
+  const [pendingInput, setPendingInput] = useState("");
   const charLimit = 3000;
 
-  const handleRun = () => {
+  const handleRun = async () => {
     if (input.trim().length === 0 || isRunning) return;
-    onRun(input.trim(), medium, "text");
+
+    const raw = input.trim();
+
+    if (!askCrossQuestions) {
+      onRun(raw, medium, "text");
+      return;
+    }
+
+    setPendingInput(raw);
+    setClarifyOpen(true);
+    setClarifyLoading(true);
+
+    try {
+      const response = await fetch("/api/clarify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "plan", studio: "creative", input: raw, medium }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate clarification questions");
+      }
+
+      const data = (await response.json()) as ClarificationPlan;
+      setClarifyPlan(data);
+    } catch {
+      setClarifyOpen(false);
+      onRun(raw, medium, "text");
+    } finally {
+      setClarifyLoading(false);
+    }
+  };
+
+  const handleClarificationSubmit = async (answers: ClarificationAnswer[]) => {
+    if (!clarifyPlan) return;
+
+    setClarifyLoading(true);
+    try {
+      const response = await fetch("/api/clarify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "finalize",
+          studio: "creative",
+          input: pendingInput,
+          plan: clarifyPlan,
+          answers,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to finalize clarification");
+      }
+
+      const data = (await response.json()) as { enrichedInput: string; qaSummary: string[] };
+      onRun(data.enrichedInput, medium, "text", data.qaSummary);
+    } catch {
+      onRun(pendingInput, medium, "text");
+    } finally {
+      setClarifyLoading(false);
+      setClarifyOpen(false);
+      setClarifyPlan(null);
+      setPendingInput("");
+    }
   };
 
   const handleSampleSelect = (sampleInput: string, sampleMedium: CreativeMedium) => {
@@ -98,6 +174,20 @@ export function CreativeInputPanel({ onRun, isRunning }: CreativeInputPanelProps
               <span className="text-[var(--warning)]">Near limit</span>
             )}
           </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 px-3 py-2 mt-2">
+            <div>
+              <p className="text-xs font-medium">Ask cross questions</p>
+              <p className="text-[11px] text-muted-foreground">
+                Clarify style and details before prompt generation
+              </p>
+            </div>
+            <Switch
+              checked={askCrossQuestions}
+              onCheckedChange={setAskCrossQuestions}
+              disabled={isRunning}
+            />
+          </div>
         </div>
 
         {/* Hint */}
@@ -124,6 +214,19 @@ export function CreativeInputPanel({ onRun, isRunning }: CreativeInputPanelProps
           )}
         </Button>
       </div>
+
+      <ClarificationDialog
+        open={clarifyOpen}
+        loading={clarifyLoading}
+        plan={clarifyPlan}
+        onClose={() => {
+          if (clarifyLoading) return;
+          setClarifyOpen(false);
+          setClarifyPlan(null);
+          setPendingInput("");
+        }}
+        onSubmit={handleClarificationSubmit}
+      />
     </div>
   );
 }

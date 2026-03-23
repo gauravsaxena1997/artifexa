@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Info, Lightbulb, Copy, Check, ArrowRight, Image, Video } from "lucide-react";
 import {
   Dialog,
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CREATIVE_SAMPLE_CASES } from "@/lib/creative-sample-cases";
 import type { CreativeMedium } from "@/types/creative";
+import type { CreativeSampleCase } from "@/lib/creative-sample-cases";
 
 interface CreativeSampleDialogProps {
   onSelect: (input: string, medium: CreativeMedium) => void;
@@ -23,6 +24,16 @@ interface CreativeSampleDialogProps {
 export function CreativeSampleDialog({ onSelect }: CreativeSampleDialogProps) {
   const [open, setOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [difficultyFilter, setDifficultyFilter] = useState<"all" | CreativeSampleCase["difficulty"]>("all");
+  const [mediumFilter, setMediumFilter] = useState<"all" | CreativeMedium>("all");
+
+  const filteredSamples = useMemo(() => {
+    return CREATIVE_SAMPLE_CASES.filter((sample) => {
+      const byDifficulty = difficultyFilter === "all" || sample.difficulty === difficultyFilter;
+      const byMedium = mediumFilter === "all" || sample.medium === mediumFilter;
+      return byDifficulty && byMedium;
+    });
+  }, [difficultyFilter, mediumFilter]);
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -41,6 +52,8 @@ export function CreativeSampleDialog({ onSelect }: CreativeSampleDialogProps) {
     return "bg-red-500/10 text-red-400 border-red-500/20";
   };
 
+  const toLabel = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
@@ -52,7 +65,7 @@ export function CreativeSampleDialog({ onSelect }: CreativeSampleDialogProps) {
         <span className="hidden sm:inline">Sample Cases</span>
         <span className="sm:hidden">Samples</span>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] p-0">
+      <DialogContent className="w-[95vw] sm:w-[70vw] sm:max-w-[70vw] max-h-[85vh] min-h-[70vh] p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Info className="w-5 h-5 text-primary" />
@@ -63,9 +76,54 @@ export function CreativeSampleDialog({ onSelect }: CreativeSampleDialogProps) {
             load it with the correct medium setting.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[65vh] px-6 pb-6">
+        <div className="px-6 pb-2">
+          <div className="rounded-lg border border-border bg-secondary/20 p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">Complexity:</span>
+              {(["all", "simple", "moderate", "complex"] as const).map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setDifficultyFilter(level)}
+                  className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+                    difficultyFilter === level
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/40"
+                  }`}
+                >
+                  {toLabel(level)}
+                </button>
+              ))}
+
+              <span className="text-xs font-medium text-muted-foreground ml-2">Medium:</span>
+              {(["all", "image", "video"] as const).map((medium) => (
+                <button
+                  key={medium}
+                  onClick={() => setMediumFilter(medium)}
+                  className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+                    mediumFilter === medium
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/40"
+                  }`}
+                >
+                  {toLabel(medium)}
+                </button>
+              ))}
+
+              <button
+                onClick={() => {
+                  setDifficultyFilter("all");
+                  setMediumFilter("all");
+                }}
+                className="ml-auto text-[11px] text-primary hover:underline"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+        <ScrollArea className="h-[58vh] min-h-[58vh] px-6 pb-6">
           <div className="space-y-4">
-            {CREATIVE_SAMPLE_CASES.map((sample) => (
+            {filteredSamples.map((sample) => (
               <div
                 key={sample.id}
                 className="rounded-lg border border-border p-4 hover:border-primary/30 transition-colors"
@@ -77,7 +135,7 @@ export function CreativeSampleDialog({ onSelect }: CreativeSampleDialogProps) {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Badge variant="outline" className={`text-[10px] ${difficultyColor(sample.difficulty)}`}>
-                      {sample.difficulty}
+                      {toLabel(sample.difficulty)}
                     </Badge>
                     <Badge variant="outline" className="text-[10px] gap-1">
                       {sample.medium === "image" ? (
@@ -85,7 +143,7 @@ export function CreativeSampleDialog({ onSelect }: CreativeSampleDialogProps) {
                       ) : (
                         <Video className="w-3 h-3" />
                       )}
-                      {sample.medium}
+                      {toLabel(sample.medium)}
                     </Badge>
                     <Badge variant="outline" className="text-[10px]">
                       {sample.category}
@@ -120,6 +178,11 @@ export function CreativeSampleDialog({ onSelect }: CreativeSampleDialogProps) {
                 </div>
               </div>
             ))}
+            {filteredSamples.length === 0 && (
+              <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                No sample cases match these filters.
+              </div>
+            )}
           </div>
         </ScrollArea>
       </DialogContent>

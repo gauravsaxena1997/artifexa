@@ -4,10 +4,13 @@ import { useState, useRef } from "react";
 import { Upload, X, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { SampleCasesDialog } from "./SampleCasesDialog";
+import { ClarificationDialog } from "./ClarificationDialog";
+import type { ClarificationAnswer, ClarificationPlan } from "@/types/clarification";
 
 interface InputPanelProps {
-  onRun: (input: string, source: "text" | "ocr") => void;
+  onRun: (input: string, source: "text" | "ocr", clarificationSummary?: string[]) => void;
   isRunning: boolean;
 }
 
@@ -16,6 +19,11 @@ export function InputPanel({ onRun, isRunning }: InputPanelProps) {
   const [ocrText, setOcrText] = useState<string | null>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrFileName, setOcrFileName] = useState<string | null>(null);
+  const [askCrossQuestions, setAskCrossQuestions] = useState(true);
+  const [clarifyOpen, setClarifyOpen] = useState(false);
+  const [clarifyLoading, setClarifyLoading] = useState(false);
+  const [clarifyPlan, setClarifyPlan] = useState<ClarificationPlan | null>(null);
+  const [pendingInput, setPendingInput] = useState<string>("");
   const fileRef = useRef<HTMLInputElement>(null);
   const charLimit = 5000;
 
@@ -72,9 +80,73 @@ export function InputPanel({ onRun, isRunning }: InputPanelProps) {
     setOcrFileName(null);
   };
 
-  const handleRun = () => {
+  const handleRun = async () => {
     if (input.trim().length === 0 || isRunning) return;
-    onRun(input.trim(), ocrFileName ? "ocr" : "text");
+
+    const source = ocrFileName ? "ocr" : "text";
+    const raw = input.trim();
+
+    if (!askCrossQuestions) {
+      onRun(raw, source);
+      return;
+    }
+
+    setPendingInput(raw);
+    setClarifyOpen(true);
+    setClarifyLoading(true);
+
+    try {
+      const response = await fetch("/api/clarify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "plan", studio: "product", input: raw }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate clarification questions");
+      }
+
+      const data = (await response.json()) as ClarificationPlan;
+      setClarifyPlan(data);
+    } catch {
+      setClarifyOpen(false);
+      onRun(raw, source);
+    } finally {
+      setClarifyLoading(false);
+    }
+  };
+
+  const handleClarificationSubmit = async (answers: ClarificationAnswer[]) => {
+    if (!clarifyPlan) return;
+
+    setClarifyLoading(true);
+    try {
+      const response = await fetch("/api/clarify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "finalize",
+          studio: "product",
+          input: pendingInput,
+          plan: clarifyPlan,
+          answers,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to finalize clarification");
+      }
+
+      const data = (await response.json()) as { enrichedInput: string; qaSummary: string[] };
+      onRun(data.enrichedInput, ocrFileName ? "ocr" : "text", data.qaSummary);
+    } catch {
+      onRun(pendingInput, ocrFileName ? "ocr" : "text");
+    } finally {
+      setClarifyLoading(false);
+      setClarifyOpen(false);
+      setClarifyPlan(null);
+      setPendingInput("");
+    }
   };
 
   const handleSampleSelect = (sampleInput: string) => {
@@ -132,6 +204,20 @@ export function InputPanel({ onRun, isRunning }: InputPanelProps) {
               )}
             </div>
 
+            <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 px-3 py-2">
+              <div>
+                <p className="text-xs font-medium">Ask cross questions</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Clarify intent with single/multi select before pipeline starts
+                </p>
+              </div>
+              <Switch
+                checked={askCrossQuestions}
+                onCheckedChange={setAskCrossQuestions}
+                disabled={isRunning}
+              />
+            </div>
+
             <div
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
@@ -181,6 +267,19 @@ export function InputPanel({ onRun, isRunning }: InputPanelProps) {
           )}
         </Button>
       </div>
+
+      <ClarificationDialog
+        open={clarifyOpen}
+        loading={clarifyLoading}
+        plan={clarifyPlan}
+        onClose={() => {
+          if (clarifyLoading) return;
+          setClarifyOpen(false);
+          setClarifyPlan(null);
+          setPendingInput("");
+        }}
+        onSubmit={handleClarificationSubmit}
+      />
     </div>
   );
 }
