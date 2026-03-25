@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
 import {
-  Sparkles,
+
   Package,
   Palette,
   ArrowRight,
@@ -53,7 +53,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 sm:pt-28 sm:pb-24 relative">
             <div className="max-w-3xl mx-auto text-center">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
-                <Sparkles className="w-3.5 h-3.5" />
+                <img src="/logo-transparent.png" alt="Orchestration" className="w-4 h-4 object-contain" />
                 Multi-Agent AI Orchestration
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">

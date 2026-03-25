@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Outfit } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -13,6 +13,11 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "Artifexa — AI Studios",
   description:
@@ -23,6 +28,11 @@ export const metadata: Metadata = {
       "Turn ideas into production-ready outputs with AI-powered multi-agent studios.",
     type: "website",
   },
+  icons: {
+    icon: "/logo-transparent.png",
+    shortcut: "/logo-transparent.png",
+    apple: "/logo-transparent.png",
+  },
 };
 
 export default function RootLayout({
@@ -31,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${outfit.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <TooltipProvider>{children}</TooltipProvider>
       </body>

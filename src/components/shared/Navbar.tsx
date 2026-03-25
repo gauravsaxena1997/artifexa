@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+
 
 export function Navbar() {
   return (
@@ -9,8 +9,8 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-              <Sparkles className="w-4 h-4 text-primary" />
+            <div className="w-8 h-8 flex items-center justify-center group-hover:opacity-80 transition-opacity">
+              <img src="/logo-transparent.png" alt="Artifexa Logo" className="w-full h-full object-contain" />
             </div>
             <span className="text-lg font-bold tracking-tight">Artifexa</span>
           </Link>
