@@ -27,12 +27,12 @@ export default function ProductStudioLayout({
   };
 
   return (
-    <>
+    <div className="flex-1 flex flex-col min-h-0">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       {children}
-    </>
+    </div>
   );
 }

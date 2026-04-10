@@ -21,48 +21,20 @@ import {
   bundleToText,
 } from "@/lib/creative-downloads";
 import { StudioOutputCanvas } from "@/components/studio/StudioOutputCanvas";
+import { ScoreBar } from "@/components/studio/ScoreBar";
 import type { CreativePromptBundle } from "@/types/creative";
-
-interface RunMeta {
-  totalCalls: number;
-  totalTime: number;
-  refinementLoops: number;
-  qualityScore: number;
-  promptTokens: number;
-  completionTokens: number;
-  totalTokens: number;
-}
+import type { StudioRunMeta } from "@/types";
 
 interface CreativeOutputPanelProps {
   finalOutput: CreativePromptBundle | null;
   qualityScore: number | null;
   error: string | null;
-  runMeta?: RunMeta | null;
+  runMeta?: StudioRunMeta | null;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
 }
 
-function ScoreBar({ score, label: scoreName }: { score: number; label?: string }) {
-  const pct = (score / 10) * 100;
-  const color =
-    score >= 7.5 ? "bg-[var(--success)]" : score >= 5 ? "bg-[var(--warning)]" : "bg-destructive";
-  const text =
-    score >= 9 ? "Excellent" : score >= 7.5 ? "Good" : score >= 5 ? "Adequate" : "Needs Work";
 
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">{scoreName || "Quality Score"}</span>
-        <span className="font-semibold">
-          {score}/10 — {text}
-        </span>
-      </div>
-      <div className="h-2 rounded-full bg-secondary overflow-hidden">
-        <div className={`h-full rounded-full ${color} transition-all duration-700`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
 
 function TextPromptTab({ bundle }: { bundle: CreativePromptBundle }) {
   const [copied, setCopied] = useState(false);

@@ -8,48 +8,19 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { downloadMarkdown, downloadJSON, bundleToMarkdown } from "@/lib/downloads";
 import { StudioOutputCanvas } from "./StudioOutputCanvas";
-import type { FinalBundle } from "@/types";
-
-interface RunMeta {
-  totalCalls: number;
-  totalTime: number;
-  refinementLoops: number;
-  qualityScore: number;
-  promptTokens: number;
-  completionTokens: number;
-  totalTokens: number;
-}
+import { ScoreBar } from "./ScoreBar";
+import type { FinalBundle, StudioRunMeta } from "@/types";
 
 interface OutputPanelProps {
   finalOutput: FinalBundle | null;
   qualityScore: number | null;
   error: string | null;
-  runMeta?: RunMeta | null;
+  runMeta?: StudioRunMeta | null;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
 }
 
-function ScoreBar({ score }: { score: number }) {
-  const pct = (score / 10) * 100;
-  const color =
-    score >= 7.5 ? "bg-[var(--success)]" : score >= 5 ? "bg-[var(--warning)]" : "bg-destructive";
-  const label =
-    score >= 9 ? "Excellent" : score >= 7.5 ? "Good" : score >= 5 ? "Adequate" : "Needs Work";
 
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">Quality Score</span>
-        <span className="font-semibold">
-          {score}/10 — {label}
-        </span>
-      </div>
-      <div className="h-2 rounded-full bg-secondary overflow-hidden">
-        <div className={`h-full rounded-full ${color} transition-all duration-700`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
 
 function PRDTab({ bundle }: { bundle: FinalBundle }) {
   const { prd, userJourneys, edgeCases } = bundle.sections.prd;

@@ -1,20 +1,12 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import type { AgentEvent, FinalBundle } from "@/types";
+import type { AgentEvent, FinalBundle, StudioRunMeta } from "@/types";
 import { formatUserFacingError } from "@/lib/ui-errors";
 
 const PIPELINE_TIMEOUT_MS = 120000;
 
-export interface StudioRunMeta {
-  totalCalls: number;
-  totalTime: number;
-  refinementLoops: number;
-  qualityScore: number;
-  promptTokens: number;
-  completionTokens: number;
-  totalTokens: number;
-}
+
 
 interface StudioStreamState {
   events: AgentEvent[];

@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Loader2, Circle, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Bot, Activity, X } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
 import { DialogClose } from "@/components/ui/dialog";
 
@@ -62,34 +62,46 @@ export function ProcessMonitor({ events, isRunning, runMeta, stages: stageMeta }
   const [manualOverrides, setManualOverrides] = useState<Set<string>>(new Set());
   const prevActiveRef = useRef<string | null>(null);
 
-  const hasRefine = events.some((e) => e.state === "REFINING");
-  const stages = stageMeta.filter((s) => {
-    if (s.state === "REFINING") return hasRefine;
-    if (s.conditional) {
-      return events.some((e) => e.state === s.state);
-    }
-    return true;
-  }).reverse();
+  const hasRefine = useMemo(() => events.some((e) => e.state === "REFINING"), [events]);
+  
+  const stages = useMemo(() => {
+    return stageMeta.filter((s) => {
+      if (s.state === "REFINING") return hasRefine;
+      if (s.conditional) {
+        return events.some((e) => e.state === s.state);
+      }
+      return true;
+    }).reverse();
+  }, [stageMeta, events, hasRefine]);
 
   const isEmpty = events.length === 0;
 
-  const activeStageIndex = stages.findIndex(
-    (s) => getStageStatus(s.state, events) === "active"
-  );
-  const activeStage = activeStageIndex !== -1 ? stages[activeStageIndex].state : null;
-  const [progressPercent, setProgressPercent] = useState(0);
-  const completedStages = stages.filter(s => getStageStatus(s.state, events) === "completed").length;
+  const stageStatuses = useMemo(() => {
+    const statuses: Record<string, string> = {};
+    stages.forEach(s => {
+      statuses[s.state] = getStageStatus(s.state, events);
+    });
+    return statuses;
+  }, [stages, events]);
 
-  useEffect(() => {
+  const activeStageIndex = useMemo(() => 
+    stages.findIndex((s) => stageStatuses[s.state] === "active"),
+    [stages, stageStatuses]
+  );
+  
+  const activeStage = activeStageIndex !== -1 ? stages[activeStageIndex].state : null;
+  
+  const completedStages = useMemo(() => 
+    stages.filter(s => stageStatuses[s.state] === "completed").length,
+    [stages, stageStatuses]
+  );
+
+  const progressPercent = useMemo(() => {
     const isDone = events.some((e) => e.state === "DONE");
-    if (isDone) {
-      setTimeout(() => setProgressPercent(100), 0);
-      return;
-    }
-    const activeCount = stages.filter(s => getStageStatus(s.state, events) === "active").length;
-    const rawProgress = stages.length > 0 ? ((completedStages + (activeCount * 0.5)) / stages.length) * 100 : 0;
-    setTimeout(() => setProgressPercent((prev) => Math.max(prev, rawProgress)), 0);
-  }, [events, stages.length, completedStages, stages]);
+    if (isDone) return 100;
+    const activeCount = stages.filter(s => stageStatuses[s.state] === "active").length;
+    return stages.length > 0 ? ((completedStages + (activeCount * 0.5)) / stages.length) * 100 : 0;
+  }, [events, stages, stageStatuses, completedStages]);
 
   useEffect(() => {
     if (activeStage && activeStage !== prevActiveRef.current) {
@@ -217,7 +229,7 @@ export function ProcessMonitor({ events, isRunning, runMeta, stages: stageMeta }
         ) : (
           <div className="space-y-4 max-w-4xl mx-auto pb-10">
             {stages.map((stage, i) => {
-              const status = getStageStatus(stage.state, events);
+              const status = stageStatuses[stage.state];
               const stageEvents = events.filter((e) => e.state === stage.state);
               const expanded = isStageExpanded(stage.state, status);
               const isLoop = stage.state === "REFINING";

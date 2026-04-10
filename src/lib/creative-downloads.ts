@@ -1,5 +1,6 @@
 import type { CreativePromptBundle } from "@/types/creative";
 import { BRAND_CONFIG } from "@/config/brand";
+import { triggerDownload, sanitizeFileName } from "./dom-utils";
 
 export function bundleToText(bundle: CreativePromptBundle): string {
   const lines: string[] = [];
@@ -30,31 +31,21 @@ export function bundleToText(bundle: CreativePromptBundle): string {
   return lines.join("\n");
 }
 
-function triggerDownload(content: string, fileName: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
+
 
 export function downloadCreativeMarkdown(bundle: CreativePromptBundle) {
   const md = bundleToText(bundle);
-  const safeName = bundle.title.replace(/[^a-zA-Z0-9-_ ]/g, "").replace(/\s+/g, "-").toLowerCase();
+  const safeName = sanitizeFileName(bundle.title);
   triggerDownload(md, `${safeName}-creative-prompt.md`, "text/markdown");
 }
 
 export function downloadCreativeJSON(bundle: CreativePromptBundle) {
   const json = JSON.stringify(bundle, null, 2);
-  const safeName = bundle.title.replace(/[^a-zA-Z0-9-_ ]/g, "").replace(/\s+/g, "-").toLowerCase();
+  const safeName = sanitizeFileName(bundle.title);
   triggerDownload(json, `${safeName}-creative-prompt.json`, "application/json");
 }
 
 export function downloadTextPromptOnly(bundle: CreativePromptBundle) {
-  const safeName = bundle.title.replace(/[^a-zA-Z0-9-_ ]/g, "").replace(/\s+/g, "-").toLowerCase();
+  const safeName = sanitizeFileName(bundle.title);
   triggerDownload(bundle.textPrompt, `${safeName}-text-prompt.txt`, "text/plain");
 }

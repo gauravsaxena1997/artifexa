@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import type { CreativeAgentEvent, CreativePromptBundle, CreativeMedium } from "@/types/creative";
+import type { StudioRunMeta } from "@/types";
 import { formatUserFacingError } from "@/lib/ui-errors";
 
 const PIPELINE_TIMEOUT_MS = 120000;
@@ -11,15 +12,7 @@ interface CreativeStreamState {
   finalOutput: CreativePromptBundle | null;
   isRunning: boolean;
   error: string | null;
-  runMeta: {
-    totalCalls: number;
-    totalTime: number;
-    refinementLoops: number;
-    qualityScore: number;
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-  } | null;
+  runMeta: StudioRunMeta | null;
   sessionMeta: {
     totalCalls: number;
     totalTime: number;

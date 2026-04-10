@@ -204,3 +204,13 @@ export interface SSEEvent {
   event: string;
   data: Record<string, unknown>;
 }
+
+export interface StudioRunMeta {
+  totalCalls: number;
+  totalTime: number;
+  refinementLoops: number;
+  qualityScore: number;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}

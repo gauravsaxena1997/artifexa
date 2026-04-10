@@ -1,5 +1,6 @@
 import type { FinalBundle } from "@/types";
 import { BRAND_CONFIG } from "@/config/brand";
+import { triggerDownload, sanitizeFileName } from "./dom-utils";
 
 export function bundleToMarkdown(bundle: FinalBundle): string {
   const lines: string[] = [];
@@ -108,26 +109,16 @@ export function bundleToMarkdown(bundle: FinalBundle): string {
   return lines.join("\n");
 }
 
-export function triggerDownload(content: string, fileName: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
+
 
 export function downloadMarkdown(bundle: FinalBundle) {
   const md = bundleToMarkdown(bundle);
-  const safeName = bundle.title.replace(/[^a-zA-Z0-9-_ ]/g, "").replace(/\s+/g, "-").toLowerCase();
+  const safeName = sanitizeFileName(bundle.title);
   triggerDownload(md, `${safeName}-product-studio.md`, "text/markdown");
 }
 
 export function downloadJSON(bundle: FinalBundle) {
   const json = JSON.stringify(bundle, null, 2);
-  const safeName = bundle.title.replace(/[^a-zA-Z0-9-_ ]/g, "").replace(/\s+/g, "-").toLowerCase();
+  const safeName = sanitizeFileName(bundle.title);
   triggerDownload(json, `${safeName}-product-studio.json`, "application/json");
 }
