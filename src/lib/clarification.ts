@@ -71,7 +71,10 @@ function sanitizePlan(raw: ClarificationPlan, studio: ClarificationStudio): Clar
         label: q.label || `Question ${qi + 1}`,
         description: q.description,
         required: q.required !== false,
-        options,
+        options: options.map(o => ({
+          ...o,
+          allowsText: /other|specify/i.test(o.label)
+        })),
         minSelections: type === "single" ? 1 : Math.max(1, q.minSelections ?? 1),
         maxSelections: type === "single" ? 1 : Math.max(1, Math.min(4, q.maxSelections ?? 3)),
       };

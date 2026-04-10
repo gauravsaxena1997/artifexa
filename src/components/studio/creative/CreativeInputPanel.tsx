@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Image, Video } from "lucide-react";
+import { Loader2, Image as ImageIcon, Video as VideoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { StudioToggle } from "@/components/studio/StudioToggle";
 import { CreativeSampleDialog } from "./CreativeSampleDialog";
 import { ClarificationDialog } from "@/components/studio/ClarificationDialog";
+import { Snackbar } from "@/components/ui/snackbar";
 import type { CreativeMedium } from "@/types/creative";
 import type { ClarificationAnswer, ClarificationPlan } from "@/types/clarification";
 
@@ -28,12 +29,25 @@ export function CreativeInputPanel({ onRun, isRunning }: CreativeInputPanelProps
   const [clarifyLoading, setClarifyLoading] = useState(false);
   const [clarifyPlan, setClarifyPlan] = useState<ClarificationPlan | null>(null);
   const [pendingInput, setPendingInput] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
   const charLimit = 3000;
+
+  // Custom Guardrail regex for Image/Video Generation context
+  // This explicitly catches visual-NSFW terms like "nude" which standard profanity filters ignore.
+  const nsfwRegex = new RegExp(
+    "\\b(nude|naked|nsfw|porn|semen|sex|xxx|gore|blood|kill|murder|rape|pedophile|incest|bestiality|snuff|terrorist|suicide)\\b",
+    "i"
+  );
 
   const handleRun = async () => {
     if (input.trim().length === 0 || isRunning) return;
 
     const raw = input.trim();
+
+    if (nsfwRegex.test(raw)) {
+      setLocalError("This prompt contains restricted keywords. Please adhere to safety guidelines and try a different prompt.");
+      return;
+    }
 
     if (!askCrossQuestions) {
       onRun(raw, medium, "text");
@@ -124,7 +138,7 @@ export function CreativeInputPanel({ onRun, isRunning }: CreativeInputPanelProps
                   : "border-border text-muted-foreground hover:border-primary/30"
               }`}
             >
-              <Image className="w-4 h-4" />
+              <ImageIcon className="w-4 h-4" aria-hidden="true" />
               Image Prompt
             </button>
             <button
@@ -136,7 +150,7 @@ export function CreativeInputPanel({ onRun, isRunning }: CreativeInputPanelProps
                   : "border-border text-muted-foreground hover:border-primary/30"
               }`}
             >
-              <Video className="w-4 h-4" />
+              <VideoIcon className="w-4 h-4" aria-hidden="true" />
               Video Prompt
             </button>
           </div>
@@ -175,25 +189,20 @@ export function CreativeInputPanel({ onRun, isRunning }: CreativeInputPanelProps
             )}
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 px-3 py-2 mt-2">
-            <div>
-              <p className="text-xs font-medium">Ask cross questions</p>
-              <p className="text-[11px] text-muted-foreground">
-                Clarify style and details before prompt generation
-              </p>
-            </div>
-            <Switch
-              checked={askCrossQuestions}
-              onCheckedChange={setAskCrossQuestions}
-              disabled={isRunning}
-            />
-          </div>
+          <StudioToggle
+            checked={askCrossQuestions}
+            onCheckedChange={setAskCrossQuestions}
+            disabled={isRunning}
+            description="Clarify style and details before prompt generation."
+            showInfoIcon={true}
+            className="mt-2"
+          />
         </div>
 
         {/* Hint */}
         <div className="rounded-lg bg-primary/5 border border-primary/10 p-3">
           <p className="text-xs text-muted-foreground">
-            <span className="font-medium text-primary">Tip:</span> Even vague inputs work — our AI agents will fill in every missing detail (pose, lighting, colors, wardrobe, camera settings) to create a complete, specific prompt.
+            <span className="font-medium text-primary">Tip:</span> Even vague inputs work: our AI agents will fill in every missing detail (pose, lighting, colors, wardrobe, camera settings) to create a complete, specific prompt.
           </p>
         </div>
       </div>
@@ -226,6 +235,12 @@ export function CreativeInputPanel({ onRun, isRunning }: CreativeInputPanelProps
           setPendingInput("");
         }}
         onSubmit={handleClarificationSubmit}
+      />
+      <Snackbar
+        open={Boolean(localError)}
+        message={localError ?? ""}
+        tone="error"
+        onClose={() => setLocalError(null)}
       />
     </div>
   );

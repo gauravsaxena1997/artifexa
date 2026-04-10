@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Loader2, Circle, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Bot } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useLayoutEffect, useRef } from "react";
 import type { AgentEvent, OrchestratorState } from "@/types";
 
 interface ProcessViewProps {
@@ -107,11 +107,11 @@ export function ProcessView({ events, isRunning }: ProcessViewProps) {
   )?.state ?? null;
 
   // Auto-expand active stage when it changes
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (activeStage && activeStage !== prevActiveRef.current) {
       prevActiveRef.current = activeStage;
       // Clear manual overrides when a new stage becomes active
-      setManualOverrides(new Set());
+      setTimeout(() => setManualOverrides(new Set()), 0);
     }
   }, [activeStage]);
 

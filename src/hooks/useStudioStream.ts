@@ -6,21 +6,31 @@ import { formatUserFacingError } from "@/lib/ui-errors";
 
 const PIPELINE_TIMEOUT_MS = 120000;
 
+export interface StudioRunMeta {
+  totalCalls: number;
+  totalTime: number;
+  refinementLoops: number;
+  qualityScore: number;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
 interface StudioStreamState {
   events: AgentEvent[];
   finalOutput: FinalBundle | null;
   isRunning: boolean;
   error: string | null;
-  runMeta: {
+  runMeta: StudioRunMeta | null;
+  sessionMeta: {
     totalCalls: number;
     totalTime: number;
-    refinementLoops: number;
-    qualityScore: number;
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
-  } | null;
+  };
 }
+
 
 export function useStudioStream() {
   const [state, setState] = useState<StudioStreamState>({
@@ -29,18 +39,29 @@ export function useStudioStream() {
     isRunning: false,
     error: null,
     runMeta: null,
+    sessionMeta: {
+      totalCalls: 0,
+      totalTime: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+    },
   });
+
   const abortRef = useRef<AbortController | null>(null);
 
   const reset = useCallback(() => {
-    setState({
+    setState((prev) => ({
+      ...prev,
       events: [],
       finalOutput: null,
       isRunning: false,
       error: null,
       runMeta: null,
-    });
+    }));
   }, []);
+
+
 
   const run = useCallback(async (
     input: string,
@@ -67,13 +88,14 @@ export function useStudioStream() {
         }
       : null;
 
-    setState({
+    setState(prev => ({
+      ...prev,
       events: clarificationEvent ? [clarificationEvent] : [],
       finalOutput: null,
       isRunning: true,
       error: null,
       runMeta: null,
-    });
+    }));
 
     try {
       const response = await fetch("/api/studio/product", {
@@ -117,10 +139,21 @@ export function useStudioStream() {
               } else if (eventType === "final_output") {
                 setState((prev) => ({ ...prev, finalOutput: data as FinalBundle }));
               } else if (eventType === "run_complete") {
-                setState((prev) => ({
-                  ...prev,
-                  runMeta: data as StudioStreamState["runMeta"],
-                }));
+                const meta = data as StudioStreamState["runMeta"];
+                if (meta) {
+                  setState((prev) => ({
+                    ...prev,
+                    runMeta: meta,
+                    sessionMeta: {
+                      totalCalls: prev.sessionMeta.totalCalls + meta.totalCalls,
+                      totalTime: prev.sessionMeta.totalTime + meta.totalTime,
+                      promptTokens: prev.sessionMeta.promptTokens + meta.promptTokens,
+                      completionTokens: prev.sessionMeta.completionTokens + meta.completionTokens,
+                      totalTokens: prev.sessionMeta.totalTokens + meta.totalTokens,
+                    },
+                  }));
+                }
+
               } else if (eventType === "error") {
                 const rawMessage = (data as { message: string }).message || "Unknown error";
                 const userMessage = formatUserFacingError(rawMessage);

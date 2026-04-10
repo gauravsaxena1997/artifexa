@@ -1,61 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Package, Info, X, Activity } from "lucide-react";
-import Link from "next/link";
+import { Package } from "lucide-react";
 import { InputPanel } from "@/components/studio/InputPanel";
-import { ProcessView } from "@/components/studio/ProcessView";
 import { OutputPanel } from "@/components/studio/OutputPanel";
 import { useStudioStream } from "@/hooks/useStudioStream";
 import { PRODUCT_STUDIO_AGENTS } from "@/types/creative";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PRODUCT_STAGE_META } from "@/config/stage-meta";
+import { StudioHeader } from "@/components/studio/StudioHeader";
+import { PipelineStatusBadge } from "@/components/studio/PipelineStatusBadge";
+import { StudioProcessDialog } from "@/components/studio/StudioProcessDialog";
+import { AgentInfoDialog } from "@/components/studio/AgentInfoDialog";
 import { Snackbar } from "@/components/ui/snackbar";
-
-function ProductAgentInfoDialog({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="bg-card border border-border rounded-xl shadow-xl p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto animate-fade-in-up"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold">AI Agents Pipeline</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <p className="text-xs text-muted-foreground mb-4">
-          Product Studio uses generic core agents with dynamic personality injection. Each agent plays a specialized role in the pipeline.
-        </p>
-        <div className="space-y-2">
-          {PRODUCT_STUDIO_AGENTS.map((agent, i) => (
-            <div
-              key={i}
-              className="p-3 rounded-lg border border-border bg-secondary/30 text-sm"
-            >
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
-                  {i + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-medium text-xs">{agent.coreAgent}</span>
-                    <span className="text-muted-foreground/50 text-xs">→</span>
-                    <span className="text-primary text-xs font-medium">{agent.persona}</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{agent.role}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+import { STUDIO_CONFIG } from "@/config/studios";
 
 export default function ProductStudioPage() {
-  const { events, finalOutput, isRunning, error, runMeta, run } = useStudioStream();
+  const { events, finalOutput, isRunning, error, runMeta, sessionMeta, run } = useStudioStream();
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showAgentInfo, setShowAgentInfo] = useState(false);
   const [showProcessModal, setShowProcessModal] = useState(false);
@@ -72,133 +33,115 @@ export default function ProductStudioPage() {
 
   useEffect(() => {
     if (isRunning) {
-      setShowProcessModal(true);
+      setTimeout(() => setShowProcessModal(true), 0);
       return;
     }
     if (!isRunning && (finalOutput || error)) {
-      setShowProcessModal(false);
+      setTimeout(() => setShowProcessModal(false), 0);
+    }
+    if (error) {
+      setTimeout(() => setShowErrorSnackbar(true), 0);
     }
   }, [error, finalOutput, isRunning]);
-
-  useEffect(() => {
-    if (error) {
-      setShowErrorSnackbar(true);
-    }
-  }, [error]);
 
   const qualityScore = runMeta?.qualityScore ?? null;
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
+    <div className="flex flex-col h-screen bg-white">
+      {/* Unified Studio Header */}
       {!isFullscreen && (
-        <header className="shrink-0 border-b border-border glass-panel z-40">
-          <div className="flex items-center justify-between px-4 h-14">
-            <div className="flex items-center gap-3">
-              <Link
-                href="/"
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Back</span>
-              </Link>
-              <div className="w-px h-5 bg-border" />
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center">
-                  <Package className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h1 className="text-sm font-semibold leading-none">Product Studio</h1>
-                    <button
-                      onClick={() => setShowAgentInfo(true)}
-                      className="text-muted-foreground hover:text-primary transition-colors"
-                      title="View AI agents pipeline"
-                    >
-                      <Info className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Idea → PRD → Architecture → QA → Download
-                  </p>
-                </div>
-              </div>
-            </div>
-            {runMeta && (
-              <div className="hidden sm:flex items-center gap-4 text-xs text-muted-foreground">
-                <span>{runMeta.totalCalls} LLM calls</span>
-                <span>{(runMeta.totalTime / 1000).toFixed(1)}s</span>
-                {runMeta.totalTokens > 0 && (
-                  <span>{runMeta.totalTokens.toLocaleString()} tokens</span>
-                )}
-                {runMeta.refinementLoops > 0 && (
-                  <span>{runMeta.refinementLoops} refinement{runMeta.refinementLoops > 1 ? "s" : ""}</span>
-                )}
-              </div>
-            )}
-          </div>
-        </header>
+        <StudioHeader
+          name={STUDIO_CONFIG.product.name}
+          icon={<Package className="w-4 h-4 text-indigo-600" />}
+          pipelineFlow="IDEATION &#8594; ARCHITECTURE &#8594; QA &#8594; REVIEW &#8594; FINALIZE"
+          onShowAgentInfo={() => setShowAgentInfo(true)}
+          runMeta={{ 
+            ...sessionMeta, 
+            refinementLoops: runMeta?.refinementLoops ?? 0,
+          }}
+        />
+
       )}
 
-      {/* Split Layout: Input + Output (50 / 50) */}
+      {/* Split-Pane IDE Layout */}
       <div className="flex-1 overflow-hidden">
         {isFullscreen ? (
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto bg-slate-50/50">
             <OutputPanel
               finalOutput={finalOutput}
               qualityScore={qualityScore}
               error={error}
-              runMeta={runMeta}
+              runMeta={{ 
+                ...sessionMeta, 
+                refinementLoops: runMeta?.refinementLoops ?? 0,
+                qualityScore: runMeta?.qualityScore ?? 0
+              }}
               isFullscreen={isFullscreen}
+
               onToggleFullscreen={() => setIsFullscreen((v) => !v)}
             />
           </div>
         ) : (
-          <div className="grid lg:grid-cols-2 h-full divide-x divide-border">
-            <div className="overflow-y-auto min-h-0">
+          <div className="flex flex-col lg:flex-row h-full">
+            {/* Sidebar (Input) */}
+            <div className="w-full lg:w-[420px] shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 bg-slate-50/30 overflow-y-auto min-h-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10 relative">
               <InputPanel onRun={handleRun} isRunning={isRunning} />
             </div>
-            <div className="overflow-y-auto min-h-0">
-              <OutputPanel
-                finalOutput={finalOutput}
-                qualityScore={qualityScore}
-                error={error}
-                runMeta={runMeta}
-                isFullscreen={isFullscreen}
-                onToggleFullscreen={() => setIsFullscreen(true)}
-              />
+            {/* Canvas (Output) */}
+            <div className="flex-1 overflow-y-auto min-h-0 bg-white relative">
+              <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.3]" />
+              <div className="relative h-full z-10">
+                <OutputPanel
+                  finalOutput={finalOutput}
+                  qualityScore={qualityScore}
+                  error={error}
+                  runMeta={{ 
+                    ...sessionMeta, 
+                    refinementLoops: runMeta?.refinementLoops ?? 0,
+                    qualityScore: runMeta?.qualityScore ?? 0
+                  }}
+                  isFullscreen={isFullscreen}
+                  onToggleFullscreen={() => setIsFullscreen(true)}
+                />
+
+              </div>
             </div>
           </div>
         )}
       </div>
 
+      {/* Unified Floating Status Badge */}
       {!isFullscreen && (
-        <button
+        <PipelineStatusBadge
+          isRunning={isRunning}
+          eventCount={events.length}
           onClick={() => setShowProcessModal(true)}
-          className="fixed bottom-5 right-5 z-40 rounded-full border border-primary/30 bg-background/95 shadow-lg px-4 py-2.5 flex items-center gap-2 hover:border-primary transition-colors"
-        >
-          <Activity className={`w-4 h-4 ${isRunning ? "text-primary animate-pulse" : "text-primary"}`} />
-          <span className="text-xs font-medium">Process</span>
-          {events.length > 0 && (
-            <span className="text-[10px] rounded-full bg-primary/10 text-primary px-1.5 py-0.5">
-              {events.length}
-            </span>
-          )}
-        </button>
+        />
       )}
 
-      <Dialog open={showProcessModal} onOpenChange={setShowProcessModal}>
-        <DialogContent className="max-w-4xl w-[95vw] h-[78vh] p-0 sm:max-w-4xl" showCloseButton>
-          <DialogHeader className="px-5 pt-4 pb-0">
-            <DialogTitle className="text-sm">Pipeline Process</DialogTitle>
-          </DialogHeader>
-          <div className="h-full overflow-y-auto pb-4">
-            <ProcessView events={events} isRunning={isRunning} />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Unified Pipeline Monitor Dialog */}
+      <StudioProcessDialog
+        open={showProcessModal}
+        onOpenChange={setShowProcessModal}
+        events={events}
+        isRunning={isRunning}
+        runMeta={{ 
+          ...sessionMeta, 
+          refinementLoops: runMeta?.refinementLoops ?? 0,
+          qualityScore: runMeta?.qualityScore ?? 0
+        }}
+        stageMeta={PRODUCT_STAGE_META}
+      />
 
-      {showAgentInfo && <ProductAgentInfoDialog onClose={() => setShowAgentInfo(false)} />}
+
+      {/* Unified Agent Info Dialog */}
+      {showAgentInfo && (
+        <AgentInfoDialog
+          description="Product Studio orchestrates a pipeline of specialized micro-agents. Each agent enforces strict architectural constraints."
+          agents={PRODUCT_STUDIO_AGENTS}
+          onClose={() => setShowAgentInfo(false)}
+        />
+      )}
 
       <Snackbar
         open={showErrorSnackbar && Boolean(error)}

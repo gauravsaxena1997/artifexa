@@ -33,20 +33,20 @@ export function Snackbar({
         role="status"
         aria-live="polite"
         className={cn(
-          "w-full max-w-lg rounded-lg border shadow-lg backdrop-blur-sm px-4 py-3 flex items-start gap-3",
+          "w-full max-w-lg rounded-xl border shadow-2xl px-5 py-4 flex items-center gap-4 transition-all duration-300",
           tone === "error"
-            ? "bg-destructive/10 border-destructive/40 text-foreground"
-            : "bg-[var(--success)]/10 border-[var(--success)]/40 text-foreground"
+            ? "bg-slate-900 border-slate-800 text-white"
+            : "bg-emerald-600 border-emerald-500 text-white"
         )}
       >
         {tone === "error" ? (
-          <AlertCircle className="w-4 h-4 mt-0.5 text-destructive shrink-0" />
+          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
         ) : (
-          <CheckCircle2 className="w-4 h-4 mt-0.5 text-[var(--success)] shrink-0" />
+          <CheckCircle2 className="w-5 h-5 text-emerald-200 shrink-0" />
         )}
-        <p className="text-sm leading-5 flex-1">{message}</p>
+        <p className="text-sm font-medium leading-relaxed flex-1">{message}</p>
         <button
-          className="text-muted-foreground hover:text-foreground transition-colors"
+          className="text-slate-400 hover:text-white transition-colors p-1"
           onClick={onClose}
           aria-label="Close notification"
         >

@@ -1,6 +1,6 @@
 const JSON_STRICT = `CRITICAL: Your response must be ONLY a raw JSON object. Do NOT wrap it in markdown code fences. Do NOT add any text, headings, or explanation before or after the JSON. Start your response with { and end with }.
 
-WRITING RULES for all string values: Write like a human. Never use these words: delve, tapestry, crucial, pivotal, underscore, vibrant, intricate, meticulous, testament, landscape (figurative), fostering, showcasing, leveraging, cutting-edge, seamless, Furthermore, Moreover, Additionally, It is worth noting, Notably. Be specific and concrete, not generic. Max one em dash per response. State facts directly.`;
+WRITING RULES for all string values: Write like a human. NEVER use em dashes (—) or en dashes (–). Use standard punctuation (periods, commas, colons) instead. Never use these words: delve, tapestry, crucial, pivotal, underscore, vibrant, intricate, meticulous, testament, landscape (figurative), fostering, showcasing, leveraging, cutting-edge, seamless, Furthermore, Moreover, Additionally, It is worth noting, Notably. Be specific and concrete, not generic. State facts directly.`;
 
 // ─── Input Analyzer ──────────────────────────────────────────────────────────
 

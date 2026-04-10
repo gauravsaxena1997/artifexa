@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Info, Lightbulb, Copy, Check, ArrowRight, Image, Video } from "lucide-react";
+import { Info, Lightbulb, Copy, Check, ArrowRight, Image as ImageIcon, Video as VideoIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -139,9 +139,9 @@ export function CreativeSampleDialog({ onSelect }: CreativeSampleDialogProps) {
                     </Badge>
                     <Badge variant="outline" className="text-[10px] gap-1">
                       {sample.medium === "image" ? (
-                        <Image className="w-3 h-3" />
+                        <ImageIcon className="w-3 h-3" aria-hidden="true" />
                       ) : (
-                        <Video className="w-3 h-3" />
+                        <VideoIcon className="w-3 h-3" aria-hidden="true" />
                       )}
                       {toLabel(sample.medium)}
                     </Badge>

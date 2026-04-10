@@ -1,7 +1,5 @@
 // ─── Creative Studio Types ───────────────────────────────────────────────────
 
-import type { LLMResponse } from "./index";
-
 export type CreativeMedium = "image" | "video";
 
 export type CreativeStyle =

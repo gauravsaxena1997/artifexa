@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Copy, Check, FileJson, FileText, AlertTriangle, Maximize2, Minimize2, Info, X } from "lucide-react";
+import { Download, Copy, Check, FileJson, FileText, AlertTriangle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { downloadMarkdown, downloadJSON, bundleToMarkdown } from "@/lib/downloads";
+import { StudioOutputCanvas } from "./StudioOutputCanvas";
 import type { FinalBundle } from "@/types";
 
 interface RunMeta {
@@ -62,7 +63,7 @@ function PRDTab({ bundle }: { bundle: FinalBundle }) {
         <h4 className="font-semibold mb-2">Features ({prd.features.length})</h4>
         <div className="space-y-2">
           {prd.features.map((f, i) => (
-            <div key={i} className="flex items-start gap-2 p-2 rounded-md bg-secondary/30">
+            <div key={i} className="flex items-start gap-2 p-2 rounded-md bg-white border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300">
               <Badge
                 variant="outline"
                 className={`shrink-0 text-[10px] ${
@@ -103,7 +104,7 @@ function PRDTab({ bundle }: { bundle: FinalBundle }) {
       <div>
         <h4 className="font-semibold mb-2">User Journeys</h4>
         {userJourneys.map((j, i) => (
-          <div key={i} className="mb-3 p-2 rounded-md bg-secondary/30">
+          <div key={i} className="mb-3 p-2 rounded-md bg-white border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium text-xs">{j.persona}</span>
               <Badge variant="outline" className="text-[10px]">
@@ -140,16 +141,16 @@ function ArchTab({ bundle }: { bundle: FinalBundle }) {
       <div>
         <h4 className="font-semibold mb-2">Tech Stack</h4>
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="p-2 rounded bg-secondary/30">
+          <div className="p-2 rounded bg-white border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300">
             <span className="text-muted-foreground">Frontend:</span> {techStack.frontend.join(", ")}
           </div>
-          <div className="p-2 rounded bg-secondary/30">
+          <div className="p-2 rounded bg-white border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300">
             <span className="text-muted-foreground">Backend:</span> {techStack.backend.join(", ")}
           </div>
-          <div className="p-2 rounded bg-secondary/30">
+          <div className="p-2 rounded bg-white border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300">
             <span className="text-muted-foreground">Database:</span> {techStack.database.join(", ")}
           </div>
-          <div className="p-2 rounded bg-secondary/30">
+          <div className="p-2 rounded bg-white border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300">
             <span className="text-muted-foreground">Infra:</span> {techStack.infrastructure.join(", ")}
           </div>
         </div>
@@ -160,7 +161,7 @@ function ArchTab({ bundle }: { bundle: FinalBundle }) {
         <p className="text-muted-foreground text-xs">{hld.overview}</p>
         <div className="mt-2 space-y-1.5">
           {hld.components.map((c, i) => (
-            <div key={i} className="p-2 rounded bg-secondary/30 text-xs">
+            <div key={i} className="p-2 rounded bg-white border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300 text-xs">
               <span className="font-medium">{c.name}</span>
               <span className="text-muted-foreground"> — {c.responsibility}</span>
               {c.communicatesWith.length > 0 && (
@@ -176,7 +177,7 @@ function ArchTab({ bundle }: { bundle: FinalBundle }) {
         <h4 className="font-semibold mb-2">API Endpoints ({lld.apiEndpoints.length})</h4>
         <div className="space-y-1">
           {lld.apiEndpoints.map((ep, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs p-1.5 rounded bg-secondary/30">
+            <div key={i} className="flex items-center gap-2 text-xs p-1.5 rounded bg-white border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300">
               <Badge variant="outline" className="text-[10px] font-mono shrink-0">
                 {ep.method}
               </Badge>
@@ -189,7 +190,7 @@ function ArchTab({ bundle }: { bundle: FinalBundle }) {
       <div>
         <h4 className="font-semibold mb-2">Database Schema</h4>
         {lld.dbSchema.map((t, i) => (
-          <div key={i} className="mb-2 p-2 rounded bg-secondary/30 text-xs">
+          <div key={i} className="mb-2 p-2 rounded bg-white border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300 text-xs">
             <span className="font-medium font-mono">{t.table}</span>
             <div className="mt-1 space-y-0.5">
               {t.columns.map((col, ci) => (
@@ -229,7 +230,7 @@ function QATab({ bundle }: { bundle: FinalBundle }) {
         <h4 className="font-semibold mb-2">Test Cases ({testCases.length})</h4>
         <div className="space-y-2">
           {testCases.map((tc) => (
-            <div key={tc.id} className="p-2 rounded bg-secondary/30 text-xs">
+            <div key={tc.id} className="p-2 rounded bg-white border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300 text-xs">
               <div className="flex items-center gap-2 mb-1">
                 <Badge variant="outline" className="text-[10px] font-mono">{tc.id}</Badge>
                 <Badge
@@ -272,7 +273,7 @@ function CritiqueTab({ bundle }: { bundle: FinalBundle }) {
           <h4 className="font-semibold mb-2">Issues ({issues.length})</h4>
           <div className="space-y-2">
             {issues.map((issue, i) => (
-              <div key={i} className="p-2 rounded bg-secondary/30 text-xs">
+              <div key={i} className="p-2 rounded bg-white border border-slate-200 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-300 text-xs">
                 <div className="flex items-center gap-2 mb-1">
                   <AlertTriangle
                     className={`w-3 h-3 ${
@@ -297,67 +298,8 @@ function CritiqueTab({ bundle }: { bundle: FinalBundle }) {
   );
 }
 
-function TokenInfoDialog({ runMeta, onClose }: { runMeta: RunMeta; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-card border border-border rounded-xl shadow-xl p-6 max-w-sm w-full mx-4 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold">Run Details</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg bg-secondary/50">
-              <p className="text-xs text-muted-foreground">Input Tokens</p>
-              <p className="text-lg font-semibold">{runMeta.promptTokens.toLocaleString()}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-secondary/50">
-              <p className="text-xs text-muted-foreground">Output Tokens</p>
-              <p className="text-lg font-semibold">{runMeta.completionTokens.toLocaleString()}</p>
-            </div>
-          </div>
-          <div className="p-3 rounded-lg bg-secondary/50">
-            <p className="text-xs text-muted-foreground">Total Tokens</p>
-            <p className="text-lg font-semibold">{runMeta.totalTokens.toLocaleString()}</p>
-          </div>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div>
-              <p className="text-xs text-muted-foreground">LLM Calls</p>
-              <p className="text-sm font-semibold">{runMeta.totalCalls}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Duration</p>
-              <p className="text-sm font-semibold">{(runMeta.totalTime / 1000).toFixed(1)}s</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Refinements</p>
-              <p className="text-sm font-semibold">{runMeta.refinementLoops}</p>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-border">
-            <p className="text-xs text-muted-foreground">
-              Limit: 50,000 tokens per run. Current usage: {((runMeta.totalTokens / 50000) * 100).toFixed(1)}%
-            </p>
-            <div className="h-2 rounded-full bg-secondary overflow-hidden mt-1.5">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ${
-                  runMeta.totalTokens > 40000 ? "bg-destructive" : runMeta.totalTokens > 25000 ? "bg-[var(--warning)]" : "bg-primary"
-                }`}
-                style={{ width: `${Math.min((runMeta.totalTokens / 50000) * 100, 100)}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function OutputPanel({ finalOutput, qualityScore, error, runMeta, isFullscreen, onToggleFullscreen }: OutputPanelProps) {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
-  const [showTokenInfo, setShowTokenInfo] = useState(false);
 
   const handleCopy = (section: string) => {
     if (!finalOutput) return;
@@ -367,113 +309,87 @@ export function OutputPanel({ finalOutput, qualityScore, error, runMeta, isFulls
     setTimeout(() => setCopiedSection(null), 2000);
   };
 
+  const actionButtons = finalOutput ? (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-8 text-xs gap-1.5 rounded-lg border-slate-200 shadow-sm"
+        onClick={() => handleCopy("all")}
+      >
+        {copiedSection === "all" ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+        {copiedSection === "all" ? "Copied!" : "Copy All"}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-8 text-xs gap-1.5 rounded-lg border-slate-200 shadow-sm"
+        onClick={() => downloadMarkdown(finalOutput)}
+      >
+        <FileText className="w-3 h-3" />
+        .md
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-8 text-xs gap-1.5 rounded-lg border-slate-200 shadow-sm"
+        onClick={() => downloadJSON(finalOutput)}
+      >
+        <FileJson className="w-3 h-3" />
+        .json
+      </Button>
+    </>
+  ) : null;
+
   return (
-    <div className={`flex flex-col h-full ${isFullscreen ? "max-w-5xl mx-auto w-full" : ""}`}>
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <h2 className="text-base font-semibold">Output</h2>
-          {runMeta && (
-            <button
-              onClick={() => setShowTokenInfo(true)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Info className="w-3.5 h-3.5" />
-              <span>{runMeta.totalTokens.toLocaleString()} tokens</span>
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          {finalOutput && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs gap-1.5"
-                onClick={() => handleCopy("all")}
-              >
-                {copiedSection === "all" ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {copiedSection === "all" ? "Copied!" : "Copy All"}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs gap-1.5"
-                onClick={() => downloadMarkdown(finalOutput)}
-              >
-                <FileText className="w-3 h-3" />
-                .md
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs gap-1.5"
-                onClick={() => downloadJSON(finalOutput)}
-              >
-                <FileJson className="w-3 h-3" />
-                .json
-              </Button>
-            </>
-          )}
-          {onToggleFullscreen && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs gap-1.5 ml-1"
-              onClick={onToggleFullscreen}
-            >
-              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            </Button>
-          )}
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        {!finalOutput ? (
-          <div className="flex items-center justify-center h-full p-6">
-            <div className="text-center space-y-3">
-              <Download className="w-10 h-10 text-muted-foreground/30 mx-auto" />
-              <p className="text-base text-muted-foreground">
-                {error
-                  ? "Run stopped. Fix the issue and retry when ready."
-                  : "Your output will appear here after running the pipeline"}
-              </p>
-            </div>
+    <StudioOutputCanvas
+      title="Artifact Canvas"
+      runMeta={runMeta}
+      hasOutput={!!finalOutput}
+      isFullscreen={isFullscreen ?? false}
+      onToggleFullscreen={onToggleFullscreen}
+      actions={actionButtons}
+      footer={qualityScore !== null && finalOutput ? <ScoreBar score={qualityScore} /> : null}
+      emptyState={
+        <div className="text-center space-y-4 max-w-sm mx-auto animate-fade-in-up">
+          <div className="w-20 h-20 mx-auto bg-slate-50 border border-slate-200 rounded-3xl flex items-center justify-center shadow-inner mb-6 transition-all duration-300 hover:scale-105">
+            <Download className="w-8 h-8 text-slate-300" />
           </div>
-        ) : (
-          <Tabs defaultValue="prd" className="flex flex-col h-full">
-            <TabsList className="mx-5 mt-3 bg-secondary/50 h-9">
-              <TabsTrigger value="prd" className="text-sm h-7">PRD</TabsTrigger>
-              <TabsTrigger value="arch" className="text-sm h-7">Architecture</TabsTrigger>
-              <TabsTrigger value="qa" className="text-sm h-7">QA</TabsTrigger>
-              <TabsTrigger value="score" className="text-sm h-7">Score</TabsTrigger>
-            </TabsList>
-            <ScrollArea className="flex-1 px-5 pb-6 mt-3">
-              <TabsContent value="prd" className="mt-0">
-                <PRDTab bundle={finalOutput} />
-              </TabsContent>
-              <TabsContent value="arch" className="mt-0">
-                <ArchTab bundle={finalOutput} />
-              </TabsContent>
-              <TabsContent value="qa" className="mt-0">
-                <QATab bundle={finalOutput} />
-              </TabsContent>
-              <TabsContent value="score" className="mt-0">
-                <CritiqueTab bundle={finalOutput} />
-              </TabsContent>
-            </ScrollArea>
-          </Tabs>
-        )}
-      </div>
-
-      {qualityScore !== null && finalOutput && (
-        <div className="px-5 py-3 border-t border-border">
-          <ScoreBar score={qualityScore} />
+          <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+            {error ? "Execution Halted" : "Canvas Ready"}
+          </h3>
+          <p className="text-sm text-slate-500 leading-relaxed font-light">
+            {error
+              ? "The pipeline encountered an anomaly. Please review the trace and adjust parameters."
+              : "Engage the workspace pipeline to generate production-ready architectures and specifications."}
+          </p>
         </div>
-      )}
-
-      {showTokenInfo && runMeta && (
-        <TokenInfoDialog runMeta={runMeta} onClose={() => setShowTokenInfo(false)} />
-      )}
-    </div>
+      }
+    >
+      <Tabs defaultValue="prd" className="flex flex-col flex-1 min-h-0">
+        <div className="px-8 pt-6">
+          <TabsList className="bg-slate-100/80 p-1 rounded-full h-auto border border-slate-200/50 shadow-inner flex w-full">
+            <TabsTrigger value="prd" className="flex-1 text-xs font-bold tracking-wide h-9 px-6 rounded-full data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm transition-all duration-300 uppercase">Requirements</TabsTrigger>
+            <TabsTrigger value="arch" className="flex-1 text-xs font-bold tracking-wide h-9 px-6 rounded-full data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm transition-all duration-300 uppercase">Architecture</TabsTrigger>
+            <TabsTrigger value="qa" className="flex-1 text-xs font-bold tracking-wide h-9 px-6 rounded-full data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm transition-all duration-300 uppercase">Test Plan</TabsTrigger>
+            <TabsTrigger value="score" className="flex-1 text-xs font-bold tracking-wide h-9 px-6 rounded-full data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm transition-all duration-300 uppercase">Evaluation</TabsTrigger>
+          </TabsList>
+        </div>
+        <ScrollArea className="flex-1 min-h-0 px-8 pb-12 mt-6">
+          <TabsContent value="prd" className="mt-0 animate-fade-in-up">
+            <PRDTab bundle={finalOutput!} />
+          </TabsContent>
+          <TabsContent value="arch" className="mt-0 animate-fade-in-up">
+            <ArchTab bundle={finalOutput!} />
+          </TabsContent>
+          <TabsContent value="qa" className="mt-0 animate-fade-in-up">
+            <QATab bundle={finalOutput!} />
+          </TabsContent>
+          <TabsContent value="score" className="mt-0 animate-fade-in-up">
+            <CritiqueTab bundle={finalOutput!} />
+          </TabsContent>
+        </ScrollArea>
+      </Tabs>
+    </StudioOutputCanvas>
   );
 }
